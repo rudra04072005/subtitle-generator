@@ -1,6 +1,6 @@
-torch==2.0.1
-torchaudio==2.0.1
+torch==2.7.1
+torchaudio
 openai-whisper
+streamlit
 ffmpeg-python
 deep-translator
-streamlit
