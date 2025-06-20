@@ -20,3 +20,12 @@ vosk-model-*
 # System files
 .DS_Store
 Thumbs.db
+# Ignore unnecessary files
+*.mp4
+*.mkv
+*.srt
+__pycache__/
+outputs/
+*.ttf
+*.ttc
+*.log
