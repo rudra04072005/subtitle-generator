@@ -4,3 +4,4 @@ openai-whisper
 streamlit
 ffmpeg-python
 deep-translator
+srt
