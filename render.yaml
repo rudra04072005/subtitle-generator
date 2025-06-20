@@ -1,6 +1,8 @@
-torch==2.7.1
-torchaudio
-openai-whisper
-streamlit
-ffmpeg-python
-deep-translator
+services:
+  - type: web
+    name: subtitle-generator
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py
