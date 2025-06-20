@@ -1,8 +1,23 @@
-services:
-  - type: web
-    name: subtitle-generator
-    env: python
-    plan: free
-    region: oregon
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run app.py
+# UI framework
+streamlit
+
+# Whisper for speech recognition (installed from GitHub to avoid build errors)
+git+https://github.com/openai/whisper.git
+
+# Torch (PyTorch backend required by Whisper)
+torch==2.7.1
+
+# FFmpeg wrapper (used for audio/video handling)
+ffmpeg-python
+
+# Subtitle handling
+srt
+
+# Translation
+deep-translator
+
+# Fonts and text rendering
+Pillow
+
+# Essential utilities
+numpy<2.3
