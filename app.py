@@ -174,6 +174,8 @@ def main():
     if st.session_state.get("video_data"):
         st.download_button("🎬 Download Video with Burned Subtitles", data=st.session_state["video_data"], file_name=st.session_state["video_name"])
 
+st.success("✅ App loaded successfully.")
+
 # --------------------------
 # RUN THE APP
 # --------------------------
