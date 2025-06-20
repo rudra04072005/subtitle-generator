@@ -1,23 +1,7 @@
-# UI framework
 streamlit
-
-# Whisper for speech recognition (installed from GitHub to avoid build errors)
 git+https://github.com/openai/whisper.git
-
-# Torch (PyTorch backend required by Whisper)
-torch==2.7.1
-
-# FFmpeg wrapper (used for audio/video handling)
 ffmpeg-python
-
-# Subtitle handling
-srt
-
-# Translation
+torch
 deep-translator
-
-# Fonts and text rendering
-Pillow
-
-# Essential utilities
+srt
 numpy<2.3
