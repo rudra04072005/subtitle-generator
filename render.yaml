@@ -2,9 +2,9 @@ services:
   - type: web
     name: subtitle-generator
     env: python
+    region: oregon
     plan: free
     build:
       pythonVersion: 3.10.13
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: streamlit run app.py
-    region: oregon
