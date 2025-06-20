@@ -1,7 +1,6 @@
+torch==2.7.1
+torchaudio
+openai-whisper
 streamlit
-git+https://github.com/openai/whisper.git
 ffmpeg-python
-torch
 deep-translator
-srt
-numpy<2.3
