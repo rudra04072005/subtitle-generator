@@ -28,19 +28,14 @@ def login():
                 st.session_state["logged_in"] = True
                 st.session_state["user"] = username
                 st.success(f"Welcome, {username}!")
-                st.rerun()  
+                st.rerun()
             else:
                 st.error("Invalid username or password")
 
 # --------------------------
 # SUBTITLE PROCESSING
 # --------------------------
-
-# Create output folder
 os.makedirs("outputs", exist_ok=True)
-
-# Language name to code
-
 
 LANG_DICT = {
     name.title(): code
@@ -66,7 +61,7 @@ def generate_srt(segments, tgt_lang, progress_callback):
         end = timedelta(seconds=seg["end"])
         try:
             translated = translator.translate(seg["text"])
-        except:
+        except Exception as e:
             translated = "[Translation Error]"
         subs.append(srt.Subtitle(index=i, start=start, end=end, content=translated))
         progress_callback(0.3 + 0.6 * (i / total))
@@ -100,7 +95,7 @@ def main():
     st.sidebar.success(f"Logged in as: {st.session_state['user']}")
     if st.sidebar.button("Log out"):
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
 
     st.title("🎥 Whisper Subtitle Translator")
 
@@ -113,57 +108,62 @@ def main():
     target_lang_code = LANG_DICT[target_lang_name]
 
     if uploaded_file and st.button("Generate Subtitles"):
-        with st.spinner("Processing..."):
-            temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-            temp_input.write(uploaded_file.read())
-            temp_input.close()
+        try:
+            with st.spinner("Processing..."):
+                temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+                temp_input.write(uploaded_file.read())
+                temp_input.close()
 
-            st.info("Loading Whisper model...")
-            model = whisper.load_model("base")
-            st.success("Model loaded. Transcribing...")
+                st.info("Loading Whisper model...")
+                model = whisper.load_model("base")
+                st.success("Model loaded. Transcribing...")
 
-            result = model.transcribe(temp_input.name, language=source_lang_code)
-            segments = result["segments"]
-            full_text = result["text"]
+                result = model.transcribe(temp_input.name, language=source_lang_code)
+                segments = result["segments"]
+                full_text = result["text"]
 
-            progress_bar = st.progress(0.0)
-            progress_bar.progress(0.3)
+                progress_bar = st.progress(0.0)
+                progress_bar.progress(0.3)
 
-            st.info("Translating and generating subtitles...")
-            srt_content = generate_srt(segments, target_lang_code, progress_bar.progress)
+                st.info("Translating and generating subtitles...")
+                srt_content = generate_srt(segments, target_lang_code, progress_bar.progress)
 
-            base_name = os.path.basename(temp_input.name).split('.')[0]
-            srt_filename = f"{base_name}.srt"
-            txt_filename = f"{base_name}_transcript.txt"
-            burned_video_name = f"{base_name}_with_subs.mp4"
+                base_name = os.path.basename(temp_input.name).split('.')[0]
+                srt_filename = f"{base_name}.srt"
+                txt_filename = f"{base_name}_transcript.txt"
+                burned_video_name = f"{base_name}_with_subs.mp4"
 
-            srt_path = os.path.join("outputs", srt_filename)
-            txt_path = os.path.join("outputs", txt_filename)
-            burned_video_path = os.path.join("outputs", burned_video_name)
+                srt_path = os.path.join("outputs", srt_filename)
+                txt_path = os.path.join("outputs", txt_filename)
+                burned_video_path = os.path.join("outputs", burned_video_name)
 
-            with open(srt_path, "w", encoding="utf-8") as f:
-                f.write(srt_content)
+                with open(srt_path, "w", encoding="utf-8") as f:
+                    f.write(srt_content)
 
-            with open(txt_path, "w", encoding="utf-8") as f:
-                f.write(full_text)
+                with open(txt_path, "w", encoding="utf-8") as f:
+                    f.write(full_text)
 
-            burn_subtitles(temp_input.name, srt_path, burned_video_path)
+                burn_subtitles(temp_input.name, srt_path, burned_video_path)
 
-            with open(srt_path, "r", encoding="utf-8") as f:
-                st.session_state["srt_data"] = f.read()
+                with open(srt_path, "r", encoding="utf-8") as f:
+                    st.session_state["srt_data"] = f.read()
 
-            with open(txt_path, "r", encoding="utf-8") as f:
-                st.session_state["txt_data"] = f.read()
+                with open(txt_path, "r", encoding="utf-8") as f:
+                    st.session_state["txt_data"] = f.read()
 
-            with open(burned_video_path, "rb") as f:
-                st.session_state["video_data"] = f.read()
+                with open(burned_video_path, "rb") as f:
+                    st.session_state["video_data"] = f.read()
 
-            st.session_state["srt_name"] = srt_filename
-            st.session_state["txt_name"] = txt_filename
-            st.session_state["video_name"] = burned_video_name
+                st.session_state["srt_name"] = srt_filename
+                st.session_state["txt_name"] = txt_filename
+                st.session_state["video_name"] = burned_video_name
 
-            progress_bar.progress(1.0)
-            st.success("Subtitle, transcript, and video are ready!")
+                progress_bar.progress(1.0)
+                st.success("✅ Subtitle, transcript, and video are ready!")
+
+        except Exception as e:
+            st.error(f"❌ Something went wrong: {e}")
+            st.stop()
 
     if st.session_state.get("srt_data"):
         st.download_button("📥 Download Subtitle (.srt)", data=st.session_state["srt_data"], file_name=st.session_state["srt_name"])
@@ -173,8 +173,6 @@ def main():
 
     if st.session_state.get("video_data"):
         st.download_button("🎬 Download Video with Burned Subtitles", data=st.session_state["video_data"], file_name=st.session_state["video_name"])
-
-st.success("✅ App loaded successfully.")
 
 # --------------------------
 # RUN THE APP
