@@ -15,11 +15,9 @@ from PIL import ImageFont, ImageDraw, Image
 import re
 from deep_translator import GoogleTranslator
 
-# Get full language name to code mapping
 SUPPORTED_LANGS = GoogleTranslator().get_supported_languages(as_dict=True)
 LANG_DICT = {name.title(): code for name, code in SUPPORTED_LANGS.items()}
 
-# Font detection
 def get_font_for_text(text):
     if re.search(r'[\u0600-\u06FF]', text):
         return "fonts/NotoSansArabic-Regular.ttf"
@@ -75,10 +73,11 @@ def extract_audio(video_path):
     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return audio_path
 
-def transcribe_audio(audio_path, model_size="medium", source_lang="en"):
+def transcribe_audio(audio_path, model_size="medium"):
     model = whisper.load_model(model_size)
-    result = model.transcribe(audio_path, task="transcribe", language=source_lang)
-    return result["segments"], result["text"]
+    result = model.transcribe(audio_path, task="transcribe")
+    detected_lang = result.get("language", "unknown")
+    return result["segments"], result["text"], detected_lang
 
 def translate_segments(segments, target_lang):
     translated_segments = []
@@ -169,13 +168,13 @@ def render_subtitles_on_video(video_path, segments, output_path, font_path):
         "-c:v", "copy", "-map", "0:v:0", "-map", "1:a:0", output_path
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-def process_video(video_path, source_lang_code, target_lang_code, progress_callback, button):
+def process_video(video_path, target_lang_code, model_size, progress_callback, button):
     try:
         base_name = os.path.splitext(video_path)[0]
         progress_callback(5)
         audio_path = extract_audio(video_path)
         progress_callback(20)
-        segments, full_text = transcribe_audio(audio_path, source_lang=source_lang_code)
+        segments, full_text, detected_lang = transcribe_audio(audio_path, model_size=model_size)
         progress_callback(50)
         translated_segments = translate_segments(segments, target_lang_code)
         progress_callback(70)
@@ -189,7 +188,7 @@ def process_video(video_path, source_lang_code, target_lang_code, progress_callb
         progress_callback(100)
         with open(base_name + "_summary.txt", "w", encoding="utf-8") as f:
             f.write(full_text)
-        messagebox.showinfo("Done!", f"Subtitled video saved as:\n{final_output}")
+        messagebox.showinfo("Done!", f"Detected language: {detected_lang}\n\nSubtitled video saved as:\n{final_output}")
     except Exception as e:
         messagebox.showerror("Error", str(e))
     finally:
@@ -197,12 +196,12 @@ def process_video(video_path, source_lang_code, target_lang_code, progress_callb
 
 def run_gui():
     root = tk.Tk()
-    root.title("Whisper Subtitle Translator (with Translation)")
+    root.title("Whisper Subtitle Translator (Auto Language Detection)")
 
-    tk.Label(root, text="Spoken Language (Detected):").pack(pady=5)
-    source_lang_var = tk.StringVar(value="English")
-    source_menu = tk.OptionMenu(root, source_lang_var, *LANG_DICT.keys())
-    source_menu.pack(pady=5)
+    tk.Label(root, text="Select Whisper Model Size:").pack(pady=5)
+    model_size_var = tk.StringVar(value="medium")
+    model_menu = tk.OptionMenu(root, model_size_var, "tiny", "base", "small", "medium", "large")
+    model_menu.pack(pady=5)
 
     tk.Label(root, text="Subtitle Output Language:").pack(pady=5)
     target_lang_var = tk.StringVar(value="Arabic")
@@ -220,11 +219,11 @@ def run_gui():
         video_path = select_video_file()
         if not video_path:
             return
-        source_lang_code = LANG_DICT[source_lang_var.get()]
         target_lang_code = LANG_DICT[target_lang_var.get()]
+        model_size = model_size_var.get()
         submit_btn["state"] = "disabled"
         update_progress(0)
-        threading.Thread(target=process_video, args=(video_path, source_lang_code, target_lang_code, update_progress, submit_btn)).start()
+        threading.Thread(target=process_video, args=(video_path, target_lang_code, model_size, update_progress, submit_btn)).start()
 
     submit_btn = tk.Button(root, text="Select Video & Generate Subtitle", command=on_submit)
     submit_btn.pack(pady=10)
